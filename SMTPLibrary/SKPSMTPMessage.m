@@ -63,6 +63,7 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
             delegate, connectTimer, connectTimeout, watchdogTimer, validateSSLChain;
 @synthesize ccEmail;
 @synthesize bccEmail;
+@synthesize mimeName;
 
 #pragma mark -
 #pragma mark Memory & Lifecycle
@@ -86,6 +87,8 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
         
         // by default, validate the SSL chain
         validateSSLChain = YES;
+        
+        mimeName = @"SKPSMTPMessage 1.0";
     }
     
     return self;
@@ -104,7 +107,7 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
 	self.bccEmail = nil;
     self.parts = nil;
     self.inputString = nil;
-    
+    self.mimeName = nil;
     [inputStream release];
     inputStream = nil;
     
@@ -827,7 +830,6 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
 - (BOOL)sendParts
 {
     NSMutableString *message = [[NSMutableString alloc] init];
-    static NSString *separatorString = @"--SKPSMTPMessage--Separator--Delimiter\r\n";
     
 	CFUUIDRef	uuidRef   = CFUUIDCreate(kCFAllocatorDefault);
 	NSString	*uuid     = (NSString *)CFUUIDCreateString(kCFAllocatorDefault, uuidRef);
@@ -857,11 +859,11 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
     {
 		[message appendFormat:@"Cc:%@\r\n", self.ccEmail];		
 	}
-    
-    [message appendString:@"Content-Type: multipart/mixed; boundary=SKPSMTPMessage--Separator--Delimiter\r\n"];
-    [message appendString:@"Mime-Version: 1.0 (SKPSMTPMessage 1.0)\r\n"];
+    [message appendString:@"Content-Type: application/pkcs7-mime; name=smime.p7m; smime-type=enveloped-data\r\n"];
+	[message appendString:@"Content-Transfer-Encoding: base64\r\n"];
+    [message appendFormat:@"Mime-Version: 1.0 (%@)\r\n",mimeName];    
+    [message appendString:@"Content-Disposition: attachment; filename=smime.p7m\r\n"];
     [message appendFormat:@"Subject:%@\r\n\r\n",subject];
-    [message appendString:separatorString];
     
     NSData *messageData = [message dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
     [message release];
@@ -880,11 +882,8 @@ NSString *kSKPSMTPPartContentTransferEncodingKey = @"kSKPSMTPPartContentTransfer
         {
             [message appendFormat:@"Content-Disposition: %@\r\n", [part objectForKey:kSKPSMTPPartContentDispositionKey]];
         }
-        [message appendFormat:@"Content-Type: %@\r\n", [part objectForKey:kSKPSMTPPartContentTypeKey]];
-        [message appendFormat:@"Content-Transfer-Encoding: %@\r\n\r\n", [part objectForKey:kSKPSMTPPartContentTransferEncodingKey]];
         [message appendString:[part objectForKey:kSKPSMTPPartMessageKey]];
         [message appendString:@"\r\n"];
-        [message appendString:separatorString];
     }
     
     [message appendString:@"\r\n.\r\n"];

@@ -131,6 +131,7 @@ extern NSString *kSKPSMTPPartContentTransferEncodingKey;
 @property(nonatomic, retain) NSString *ccEmail;
 @property(nonatomic, retain) NSString *bccEmail;
 @property(nonatomic, retain) NSArray *parts;
+@property(nonatomic, retain) NSString *mimeName;
 
 @property(nonatomic, assign) NSTimeInterval connectTimeout;
 
